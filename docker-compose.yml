@@ -30,7 +30,7 @@ services:
     expose:
       - "3080"
     volumes:
-      - vision79_db_data:/app
+      - vision79_db_data:/app/data
     environment:
       - NODE_ENV=production
       - PORT=3080

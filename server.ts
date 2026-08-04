@@ -151,7 +151,15 @@ export function checkPermission(req: any, allowedRoles: Role[]): boolean {
 }
 
 // Persistent store file path
-const DATA_FILE = path.join(process.cwd(), 'data.json');
+const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+if (!fs.existsSync(DATA_DIR)) {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  } catch (e) {
+    // ignore
+  }
+}
+const DATA_FILE = path.join(DATA_DIR, 'data.json');
 
 interface DatabaseStore {
   users: User[];
