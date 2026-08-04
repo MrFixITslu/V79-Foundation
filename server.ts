@@ -245,6 +245,16 @@ function loadStore(): DatabaseStore {
     };
   }
 
+  if (!store.projects) store.projects = initialProjects;
+  if (!store.users) store.users = initialUsers;
+  if (!store.sponsors) store.sponsors = initialSponsors;
+  if (!store.donations) store.donations = initialDonations;
+  if (!store.volunteers) store.volunteers = initialVolunteers;
+  if (!store.gallery) store.gallery = initialGallery;
+  if (!store.beneficiaries) store.beneficiaries = initialBeneficiaryStories;
+  if (!store.cms) store.cms = initialCMSContent;
+  if (!store.auditLogs) store.auditLogs = initialAuditLogs;
+  if (!store.notifications) store.notifications = initialNotifications;
   if (!store.feasibilitySettings) {
     store.feasibilitySettings = DEFAULT_FEASIBILITY_SETTINGS;
   }
@@ -365,6 +375,7 @@ rechainDonations(store.donations);
 saveStore(store);
 
 function logAudit(actorEmail: string, action: string, target: string, details: string, reqIp?: string) {
+  if (!store.auditLogs) store.auditLogs = [];
   const newLog: AuditLog = {
     id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
     timestamp: new Date().toISOString(),
