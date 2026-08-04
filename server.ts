@@ -202,59 +202,81 @@ function loadStore(): DatabaseStore {
     } else {
       store = {
         users: initialUsers,
-        projects: initialProjects,
-        sponsors: initialSponsors,
-        donations: initialDonations,
-        volunteers: initialVolunteers,
-        gallery: initialGallery,
-        beneficiaries: initialBeneficiaryStories,
+        projects: [],
+        sponsors: [],
+        donations: [],
+        volunteers: [],
+        gallery: [],
+        beneficiaries: [],
         cms: initialCMSContent,
-        auditLogs: initialAuditLogs,
-        notifications: initialNotifications,
+        auditLogs: [],
+        notifications: [],
         feasibilitySettings: DEFAULT_FEASIBILITY_SETTINGS,
         heroConfig: initialHeroConfig,
         impactHubConfig: initialImpactHubConfig,
-        timelineEvents: initialTimelineEvents,
-        liveActivity: initialLiveActivity,
+        timelineEvents: [],
+        liveActivity: [],
         scorecard: initialScorecard,
         healthData: initialHealthData,
         analyticsData: initialAnalyticsData,
+        communityLevels: initialCommunityLevels,
+        badgesCatalog: initialBadges,
+        pointRules: initialPointRules,
+        userReputations: [],
+        reputationPointLogs: [],
+        projectFeedback: [],
+        annualAwards: [],
+        corporateAccounts: [],
+        sponsorshipPackages: initialSponsorshipPackages,
+        corporateReports: [],
+        ffpro2SyncRecords: [],
       };
     }
   } catch (err) {
     console.error('Error reading data.json, initializing fresh store', err);
     store = {
       users: initialUsers,
-      projects: initialProjects,
-      sponsors: initialSponsors,
-      donations: initialDonations,
-      volunteers: initialVolunteers,
-      gallery: initialGallery,
-      beneficiaries: initialBeneficiaryStories,
+      projects: [],
+      sponsors: [],
+      donations: [],
+      volunteers: [],
+      gallery: [],
+      beneficiaries: [],
       cms: initialCMSContent,
-      auditLogs: initialAuditLogs,
-      notifications: initialNotifications,
+      auditLogs: [],
+      notifications: [],
       feasibilitySettings: DEFAULT_FEASIBILITY_SETTINGS,
       heroConfig: initialHeroConfig,
       impactHubConfig: initialImpactHubConfig,
-      timelineEvents: initialTimelineEvents,
-      liveActivity: initialLiveActivity,
+      timelineEvents: [],
+      liveActivity: [],
       scorecard: initialScorecard,
       healthData: initialHealthData,
       analyticsData: initialAnalyticsData,
+      communityLevels: initialCommunityLevels,
+      badgesCatalog: initialBadges,
+      pointRules: initialPointRules,
+      userReputations: [],
+      reputationPointLogs: [],
+      projectFeedback: [],
+      annualAwards: [],
+      corporateAccounts: [],
+      sponsorshipPackages: initialSponsorshipPackages,
+      corporateReports: [],
+      ffpro2SyncRecords: [],
     };
   }
 
-  if (!store.projects) store.projects = initialProjects;
+  if (!store.projects) store.projects = [];
   if (!store.users) store.users = initialUsers;
-  if (!store.sponsors) store.sponsors = initialSponsors;
-  if (!store.donations) store.donations = initialDonations;
-  if (!store.volunteers) store.volunteers = initialVolunteers;
-  if (!store.gallery) store.gallery = initialGallery;
-  if (!store.beneficiaries) store.beneficiaries = initialBeneficiaryStories;
+  if (!store.sponsors) store.sponsors = [];
+  if (!store.donations) store.donations = [];
+  if (!store.volunteers) store.volunteers = [];
+  if (!store.gallery) store.gallery = [];
+  if (!store.beneficiaries) store.beneficiaries = [];
   if (!store.cms) store.cms = initialCMSContent;
-  if (!store.auditLogs) store.auditLogs = initialAuditLogs;
-  if (!store.notifications) store.notifications = initialNotifications;
+  if (!store.auditLogs) store.auditLogs = [];
+  if (!store.notifications) store.notifications = [];
   if (!store.feasibilitySettings) {
     store.feasibilitySettings = DEFAULT_FEASIBILITY_SETTINGS;
   }
@@ -268,11 +290,11 @@ function loadStore(): DatabaseStore {
   }
 
   if (!store.timelineEvents) {
-    store.timelineEvents = initialTimelineEvents;
+    store.timelineEvents = [];
   }
 
   if (!store.liveActivity) {
-    store.liveActivity = initialLiveActivity;
+    store.liveActivity = [];
   }
 
   if (!store.scorecard) {
@@ -300,7 +322,7 @@ function loadStore(): DatabaseStore {
   }
 
   if (!store.userReputations) {
-    store.userReputations = initialUserReputations;
+    store.userReputations = [];
   }
 
   if (!store.reputationPointLogs) {
@@ -308,15 +330,15 @@ function loadStore(): DatabaseStore {
   }
 
   if (!store.projectFeedback) {
-    store.projectFeedback = initialProjectFeedback;
+    store.projectFeedback = [];
   }
 
   if (!store.annualAwards) {
-    store.annualAwards = initialAnnualAwards;
+    store.annualAwards = [];
   }
 
   if (!store.corporateAccounts) {
-    store.corporateAccounts = initialCorporateAccounts;
+    store.corporateAccounts = [];
   }
 
   if (!store.sponsorshipPackages) {
@@ -324,11 +346,11 @@ function loadStore(): DatabaseStore {
   }
 
   if (!store.corporateReports) {
-    store.corporateReports = initialCorporateReports;
+    store.corporateReports = [];
   }
 
-  if (!store.analyticsData) {
-    store.analyticsData = initialAnalyticsData;
+  if (!store.ffpro2SyncRecords) {
+    store.ffpro2SyncRecords = [];
   }
 
 
