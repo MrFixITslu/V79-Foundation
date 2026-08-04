@@ -1,8 +1,60 @@
+# Dependency directories
 node_modules/
+jspm_packages/
+web_modules/
+
+# Build outputs
 build/
 dist/
-coverage/
+out/
+.next/
+.nuxt/
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Operating System Files
 .DS_Store
+Thumbs.db
+
+# Log files
 *.log
-.env*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local dynamic databases / storage files (prevents dev state from polluting commits)
+data.json
+db.sqlite
+*.db
+
+# Security & Secrets (NEVER upload keys, credentials, or local configs to Git)
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+*.pem
+*.key
+*.cert
+*.pfx
+*.p12
+secrets.json
+credentials.json
+firebase-key.json
+service-account*.json
+.git-credentials
+
+# Keep environment examples tracked for configuration templates
 !.env.example
+!.env.production.example

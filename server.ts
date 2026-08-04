@@ -2494,7 +2494,11 @@ app.get('/api/reputation/analytics', (req, res) => {
 function validateFFPro2Auth(req: any): boolean {
   const authHeader = req.headers['authorization'];
   const apiKeyHeader = req.headers['x-ffpro2-api-key'];
-  const expectedKey = process.env.FFPRO2_API_KEY || 'ffpro2_secret_key_123';
+  const expectedKey = process.env.FFPRO2_API_KEY;
+  
+  if (!expectedKey) {
+    return false;
+  }
   
   if (apiKeyHeader === expectedKey) return true;
   if (authHeader && authHeader.startsWith('Bearer ')) {

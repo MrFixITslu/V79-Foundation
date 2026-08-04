@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install all dependencies (including devDependencies for tsx/esbuild compilation)
-RUN npm ci
+RUN npm install
 
 # Copy application source code
 COPY . .
@@ -27,7 +27,7 @@ ENV PORT=3020
 COPY package*.json ./
 
 # Install production dependencies only to minimize image size and lock vulnerabilities
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # Copy compiled backend bundle and required data assets from builder stage
 COPY --from=builder /app/dist/server.cjs ./dist/server.cjs

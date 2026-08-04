@@ -55,7 +55,7 @@ export const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'projects' | 'needs' | 'volunteers' | 'cms' | 'audit' | 'feasibility' | 'hero' | 'impact_hub' | 'reputation' | 'donations' | 'ffpro2' | 'security'>('projects');
 
   // FFPRO2 Integration States
-  const [ffpro2ApiKey, setFfpro2ApiKey] = useState('ffpro2_secret_key_123');
+  const [ffpro2ApiKey, setFfpro2ApiKey] = useState('');
   const [ffpro2TestLoading, setFfpro2TestLoading] = useState(false);
   const [ffpro2TestResult, setFfpro2TestResult] = useState<any | null>(null);
   const [ffpro2SyncLoading, setFfpro2SyncLoading] = useState<Record<string, boolean>>({});
