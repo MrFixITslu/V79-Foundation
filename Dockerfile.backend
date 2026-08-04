@@ -32,8 +32,6 @@ RUN npm install --omit=dev
 # Copy compiled backend bundle and required data assets from builder stage
 COPY --from=builder /app/dist/server.cjs ./dist/server.cjs
 COPY --from=builder /app/dist/server.cjs.map ./dist/server.cjs.map
-# Copy initial persistent store if not exists
-COPY --from=builder /app/data.json ./data.json
 
 # Secure files ownership and transition to non-privileged user
 RUN chown -R node:node /app
