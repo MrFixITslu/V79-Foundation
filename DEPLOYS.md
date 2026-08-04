@@ -116,7 +116,7 @@ A highly robust, secure connection adapter has been built to bridge Vision79 com
 ## 3. Docker Production Deployment (Multi-Container Architecture)
 
 The application has been packaged inside a highly-secure, performance-tuned multi-container stack. Port configurations strictly adhere to production constraints:
-- **Nginx Ingress Reverse Proxy**: Ports **`80`** and **`443`** (Ingress routing)
+- **Nginx Ingress Reverse Proxy**: Host ports **`8080`** and **`8443`** mapped to container ports **`80`** and **`443`** (Ingress routing, configurable to 80/443 if available)
 - **Frontend SPA Container**: Port **`3010`** (Internal only)
 - **Backend API Express Container**: Port **`3020`** (Internal only)
 - **Database Storage Volume**: Persistent Docker named volume `vision79_db_data`
