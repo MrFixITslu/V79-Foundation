@@ -39,7 +39,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
 const app = express();
-const PORT = 3080;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3080;
 
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
