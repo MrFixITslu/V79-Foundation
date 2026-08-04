@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # 1. Frontend SPA container serving built assets via Nginx on port 3010
+  # 1. Frontend SPA container serving built assets via Nginx on port 3081
   frontend:
     build:
       context: .
@@ -9,13 +9,15 @@ services:
     container_name: vision79_frontend
     security_opt:
       - no-new-privileges:true
+    ports:
+      - "3081:3081"
     expose:
-      - "3010"
+      - "3081"
     restart: unless-stopped
     networks:
       - proxy_network
 
-  # 2. Backend API Express container listening on port 3020
+  # 2. Backend API Express container listening on port 3080
   backend:
     build:
       context: .
@@ -23,13 +25,15 @@ services:
     container_name: vision79_backend
     security_opt:
       - no-new-privileges:true
+    ports:
+      - "3080:3080"
     expose:
-      - "3020"
+      - "3080"
     volumes:
       - vision79_db_data:/app
     environment:
       - NODE_ENV=production
-      - PORT=3020
+      - PORT=3080
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - FFPRO2_API_KEY=${FFPRO2_API_KEY:-ffpro2_secret_key_123}
     restart: unless-stopped

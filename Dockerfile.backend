@@ -21,7 +21,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=3020
+ENV PORT=3080
 
 # Copy package descriptors
 COPY package*.json ./
@@ -38,7 +38,7 @@ RUN chown -R node:node /app
 USER node
 
 # Expose backend production API port
-EXPOSE 3020
+EXPOSE 3080
 
 # Run compiled backend CJS server bundle
 CMD ["node", "dist/server.cjs"]
