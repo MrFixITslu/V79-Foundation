@@ -1,0 +1,6 @@
+{
+  "name": "Vision79 Foundation",
+  "description": "Modern, secure, scalable community project, fundraising, volunteer management, and transparency platform for Vision79 Foundation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

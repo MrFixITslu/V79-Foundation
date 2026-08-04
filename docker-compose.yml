@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # 1. Frontend SPA container serving built assets via Nginx on 3010
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: vision79_frontend
+    security_opt:
+      - no-new-privileges:true
+    expose:
+      - "3010"
+    restart: unless-stopped
+    networks:
+      - vision79_network
+
+  # 2. Backend API Express container listening on 3020
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: vision79_backend
+    security_opt:
+      - no-new-privileges:true
+    expose:
+      - "3020"
+    volumes:
+      # Persistent storage volume for JSON DB ledger (no loss of cash records or sync telemetry!)
+      - vision79_db_data:/app
+    environment:
+      - NODE_ENV=production
+      - PORT=3020
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - FFPRO2_API_KEY=${FFPRO2_API_KEY:-ffpro2_secret_key_123}
+    restart: unless-stopped
+    networks:
+      - vision79_network
+
+  # 3. Dedicated Nginx Ingress Reverse Proxy routing port 80/443
+  nginx:
+    image: nginx:alpine
+    container_name: vision79_nginx_proxy
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+    networks:
+      - vision79_network
+
+networks:
+  vision79_network:
+    driver: bridge
+
+volumes:
+  vision79_db_data:
+    driver: local

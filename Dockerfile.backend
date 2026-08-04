@@ -1,0 +1,46 @@
+# Multi-Stage Build for Vision79 Backend API
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package descriptors
+COPY package*.json ./
+
+# Install all dependencies (including devDependencies for tsx/esbuild compilation)
+RUN npm ci
+
+# Copy application source code
+COPY . .
+
+# Compile TypeScript server-side bundle to dist/server.cjs
+RUN npm run build
+
+# Stage 2: Clean and lightweight runner
+FROM node:20-alpine
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3020
+
+# Copy package descriptors
+COPY package*.json ./
+
+# Install production dependencies only to minimize image size and lock vulnerabilities
+RUN npm ci --only=production
+
+# Copy compiled backend bundle and required data assets from builder stage
+COPY --from=builder /app/dist/server.cjs ./dist/server.cjs
+COPY --from=builder /app/dist/server.cjs.map ./dist/server.cjs.map
+# Copy initial persistent store if not exists
+COPY --from=builder /app/data.json ./data.json
+
+# Secure files ownership and transition to non-privileged user
+RUN chown -R node:node /app
+USER node
+
+# Expose backend production API port
+EXPOSE 3020
+
+# Run compiled backend CJS server bundle
+CMD ["node", "dist/server.cjs"]
