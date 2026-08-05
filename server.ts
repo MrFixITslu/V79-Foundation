@@ -39,7 +39,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
 const app = express();
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3080;
+const PORT = 3000;
 
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
@@ -852,6 +852,11 @@ app.post('/api/projects', (req, res) => {
     impactSummary: pData.impactSummary || 'Direct impact on local community members.',
     featured: pData.featured || false,
     followersCount: 0,
+    feasibilityAssessment: pData.feasibilityAssessment || { overallScore: 85, budgetFeasibility: 85, timelineFeasibility: 85, communityImpact: 85, resourceAvailability: 85, recommendations: [] },
+    communityVotes: pData.communityVotes || { upvotes: 0, downvotes: 0, votedUsers: {} },
+    estimatedVolunteerHours: pData.estimatedVolunteerHours || 120,
+    estimatedImpactRating: pData.estimatedImpactRating || 'High Direct Local Transformation',
+    fundingConfidenceRating: pData.fundingConfidenceRating || 85,
   };
 
   store.projects.unshift(newProject);
