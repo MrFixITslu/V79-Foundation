@@ -12,7 +12,7 @@ RUN npm install
 # Copy application source code
 COPY . .
 
-# Build frontend SPA and bundle server-frontend.ts
+# Build frontend SPA and bundle server.ts
 RUN npm run build
 
 # Stage 2: Clean and lightweight runner
@@ -40,4 +40,4 @@ USER node
 EXPOSE 3081
 
 # Run frontend static server bundle
-CMD ["node", "dist/server-frontend.cjs"]
+CMD ["node", "dist/server.cjs"]
