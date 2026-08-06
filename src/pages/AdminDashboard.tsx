@@ -31,6 +31,7 @@ import {
   Search,
   Calendar,
   RefreshCw,
+  Lock,
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
@@ -54,7 +55,35 @@ export const AdminDashboard: React.FC = () => {
     deleteProjectCategory,
   } = useAppData();
 
-  const { role } = useAuth();
+  const { role, setRole } = useAuth();
+
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(() => {
+    return sessionStorage.getItem('vision79_admin_unlocked') === 'true';
+  });
+  const [inputPassword, setInputPassword] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleUnlockAdmin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const validPasswords = ['admin', 'admin123', 'vision79', 'admin79'];
+    if (validPasswords.includes(inputPassword.trim().toLowerCase())) {
+      sessionStorage.setItem('vision79_admin_unlocked', 'true');
+      setIsAdminUnlocked(true);
+      setAuthError(null);
+      if (role !== 'admin') {
+        setRole('admin');
+      }
+    } else {
+      setAuthError("Incorrect password. Default password is 'admin'.");
+    }
+  };
+
+  const handleLockAdmin = () => {
+    sessionStorage.removeItem('vision79_admin_unlocked');
+    setIsAdminUnlocked(false);
+    setInputPassword('');
+  };
 
   const [activeTab, setActiveTab] = useState<'projects' | 'needs' | 'volunteers' | 'cms' | 'audit' | 'feasibility' | 'hero' | 'impact_hub' | 'reputation' | 'donations' | 'ffpro2' | 'security' | 'categories'>('projects');
 
@@ -180,14 +209,68 @@ export const AdminDashboard: React.FC = () => {
   const [cashLogSearch, setCashLogSearch] = useState('');
   const [selectedReceipt, setSelectedReceipt] = useState<any | null>(null);
 
-  if (role !== 'admin') {
+  if (!isAdminUnlocked) {
     return (
-      <div className="py-20 text-center space-y-4 max-w-md mx-auto">
-        <Shield className="w-16 h-16 text-[#F27D26] mx-auto" />
-        <h2 className="text-2xl font-black text-white">Admin Privileges Required</h2>
-        <p className="text-xs text-white/50">
-          Please use the top navigation role switcher to select "Admin Director" to access system controls and audit ledgers.
-        </p>
+      <div className="py-16 px-4 max-w-md mx-auto">
+        <div className="bg-[#0a0a0b] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl text-center space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-[#F27D26]/10 text-[#F27D26] border border-[#F27D26]/20 flex items-center justify-center mx-auto">
+            <Lock className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black text-white">Admin Hub Protected</h2>
+            <p className="text-xs text-white/60 leading-relaxed">
+              Enter the master administrator password to access management controls, audit ledgers, and project tools.
+            </p>
+          </div>
+
+          <form onSubmit={handleUnlockAdmin} className="space-y-4 text-left">
+            <div>
+              <label className="block text-xs font-bold text-white/70 mb-1.5 uppercase tracking-wider">
+                Administrator Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={inputPassword}
+                  onChange={(e) => {
+                    setInputPassword(e.target.value);
+                    setAuthError(null);
+                  }}
+                  placeholder="Enter admin password..."
+                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#F27D26] focus:ring-1 focus:ring-[#F27D26] transition-all"
+                  required
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 text-xs font-semibold px-1 py-0.5"
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              {authError && (
+                <p className="text-xs text-rose-400 font-medium mt-1.5 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {authError}
+                </p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3.5 rounded-xl bg-[#F27D26] hover:bg-[#d96b1f] text-black font-black text-sm shadow-lg shadow-[#F27D26]/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Lock className="w-4 h-4" />
+              Unlock Admin Hub
+            </button>
+          </form>
+
+          <div className="pt-2 border-t border-white/5 text-[11px] text-white/40">
+            Default Password: <code className="bg-white/10 px-1.5 py-0.5 rounded font-mono text-white/70">admin</code>
+          </div>
+        </div>
       </div>
     );
   }
@@ -257,7 +340,7 @@ export const AdminDashboard: React.FC = () => {
           <h1 className="text-3xl font-black text-white mt-1">Foundation Admin Director Hub</h1>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
           <button
             onClick={() => setShowCreateModal(true)}
             className="px-4 py-2.5 rounded-full bg-[#F27D26] hover:bg-[#e06c1b] text-black font-extrabold text-xs flex items-center gap-1.5 shadow-md cursor-pointer"
@@ -271,6 +354,14 @@ export const AdminDashboard: React.FC = () => {
           >
             <Plus className="w-4 h-4 text-[#F27D26]" />
             <span>Add Need Item</span>
+          </button>
+          <button
+            onClick={handleLockAdmin}
+            className="px-4 py-2.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-extrabold text-xs flex items-center gap-1.5 border border-rose-500/20 cursor-pointer transition-colors"
+            title="Lock Admin Hub"
+          >
+            <Lock className="w-4 h-4" />
+            <span>Lock Admin</span>
           </button>
         </div>
       </div>

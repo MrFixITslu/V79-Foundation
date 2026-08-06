@@ -17,7 +17,6 @@ import { TransparencyPage } from './pages/TransparencyPage.tsx';
 import { VolunteersPage } from './pages/VolunteersPage.tsx';
 import { GalleryPage } from './pages/GalleryPage.tsx';
 import { CorporatePortal } from './pages/CorporatePortal.tsx';
-import { MobilePage } from './pages/MobilePage.tsx';
 import { AboutPage } from './pages/AboutPage.tsx';
 import { ContactPage } from './pages/ContactPage.tsx';
 import { AdminDashboard } from './pages/AdminDashboard.tsx';
@@ -35,7 +34,6 @@ const getTabFromPath = (): string => {
   if (path === 'volunteers') return 'volunteers';
   if (path === 'gallery') return 'gallery';
   if (path === 'corporate' || path === 'sponsors') return 'corporate';
-  if (path === 'mobile') return 'mobile';
   if (path === 'about') return 'about';
   if (path === 'contact') return 'contact';
   return 'home';
@@ -123,7 +121,6 @@ const MainAppContent: React.FC = () => {
             {currentTab === 'volunteers' && <VolunteersPage />}
             {currentTab === 'gallery' && <GalleryPage />}
             {currentTab === 'corporate' && <CorporatePortal />}
-            {currentTab === 'mobile' && <MobilePage />}
             {currentTab === 'about' && <AboutPage />}
             {currentTab === 'contact' && <ContactPage />}
             {currentTab === 'admin' && <AdminDashboard />}

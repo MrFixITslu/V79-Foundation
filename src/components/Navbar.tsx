@@ -64,7 +64,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, openD
     { id: 'volunteers', label: 'Volunteers', icon: Users },
     { id: 'gallery', label: 'Gallery', icon: ImageIcon },
     { id: 'corporate', label: 'Sponsors', icon: Building2 },
-    { id: 'mobile', label: 'Mobile & PWA', icon: Sparkles },
     { id: 'about', label: 'About', icon: HelpCircle },
     { id: 'admin', label: 'Admin Hub', icon: Shield },
   ];
