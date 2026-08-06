@@ -162,7 +162,7 @@ export const FeasibilityScorecardModal: React.FC<FeasibilityScorecardModalProps>
           <div className="flex border-b border-white/10 gap-2">
             {[
               { id: 'scorecard', label: '15-Category Scorecard', icon: BarChart3 },
-              { id: 'recommendations', label: `AI Recommendations (${assessment.recommendations.length})`, icon: Sparkles },
+              { id: 'recommendations', label: `AI Recommendations (${assessment.recommendations?.length || 0})`, icon: Sparkles },
               { id: 'breakdown', label: 'Strengths & Risk Factors', icon: ListChecks },
             ].map((tab) => {
               const Icon = tab.icon;
@@ -192,7 +192,7 @@ export const FeasibilityScorecardModal: React.FC<FeasibilityScorecardModalProps>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {assessment.categories.map((cat) => (
+                {assessment.categories?.map((cat) => (
                   <div key={cat.id} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-2">
                     <div className="flex justify-between items-center text-xs">
                       <span className="font-extrabold text-white">{cat.name}</span>
@@ -227,7 +227,7 @@ export const FeasibilityScorecardModal: React.FC<FeasibilityScorecardModalProps>
               </div>
 
               <div className="space-y-3">
-                {assessment.recommendations.map((rec, idx) => (
+                {assessment.recommendations?.map((rec, idx) => (
                   <div key={idx} className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex items-start gap-3">
                     <div className="p-2 rounded-xl bg-[#F27D26]/20 text-[#F27D26] shrink-0 mt-0.5">
                       <CheckCircle2 className="w-4 h-4" />
@@ -253,7 +253,7 @@ export const FeasibilityScorecardModal: React.FC<FeasibilityScorecardModalProps>
                   <span>Key Project Strengths</span>
                 </div>
                 <div className="space-y-2">
-                  {assessment.strengths.map((str, idx) => (
+                  {assessment.strengths?.map((str, idx) => (
                     <div key={idx} className="p-3 rounded-xl bg-emerald-500/10 text-xs text-emerald-200 font-medium flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                       <span>{str}</span>
@@ -269,7 +269,7 @@ export const FeasibilityScorecardModal: React.FC<FeasibilityScorecardModalProps>
                   <span>Risk Factors & Mitigation Areas</span>
                 </div>
                 <div className="space-y-2">
-                  {assessment.weaknesses.map((weak, idx) => (
+                  {assessment.weaknesses?.map((weak, idx) => (
                     <div key={idx} className="p-3 rounded-xl bg-rose-500/10 text-xs text-rose-200 font-medium flex items-center gap-2">
                       <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
                       <span>{weak}</span>

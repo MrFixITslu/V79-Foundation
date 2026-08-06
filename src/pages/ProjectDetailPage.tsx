@@ -155,9 +155,9 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ project, o
       <div className="flex overflow-x-auto border-b border-white/10 gap-2 pb-1">
         {[
           { id: 'overview', label: 'Overview & Story' },
-          { id: 'needs', label: `Needs Board (${project.needs.length})` },
-          { id: 'finances', label: `Expense Transparency (${project.expenses.length})` },
-          { id: 'timeline', label: `Timeline & Updates (${project.updates.length})` },
+          { id: 'needs', label: `Needs Board (${project.needs?.length || 0})` },
+          { id: 'finances', label: `Expense Transparency (${project.expenses?.length || 0})` },
+          { id: 'timeline', label: `Timeline & Updates (${project.updates?.length || 0})` },
           { id: 'volunteers', label: 'Volunteer Portal' },
         ].map((tab) => (
           <button
@@ -190,7 +190,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ project, o
             <div className="bg-white/[0.03] p-6 sm:p-8 rounded-3xl border border-white/10 space-y-6">
               <h2 className="text-xl font-bold text-white">Milestone Progress</h2>
               <div className="space-y-4">
-                {project.milestones.map((m, idx) => (
+                {project.milestones?.map((m, idx) => (
                   <div key={m.id} className="flex gap-4 items-start">
                     <div className="flex flex-col items-center">
                       <div
@@ -204,7 +204,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ project, o
                       >
                         {m.status === 'Completed' ? <CheckCircle2 className="w-5 h-5" /> : idx + 1}
                       </div>
-                      {idx < project.milestones.length - 1 && <div className="w-0.5 h-10 bg-white/10 my-1" />}
+                      {idx < project.milestones?.length || 0 - 1 && <div className="w-0.5 h-10 bg-white/10 my-1" />}
                     </div>
 
                     <div className="flex-1 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
@@ -248,7 +248,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ project, o
             <div className="bg-white/[0.03] p-6 rounded-3xl border border-white/10 space-y-4">
               <h3 className="font-bold text-sm text-white">Field Leadership Team</h3>
               <div className="space-y-3">
-                {project.team.map((t, idx) => (
+                {project.team?.map((t, idx) => (
                   <div key={idx} className="flex items-center gap-3">
                     <img src={t.avatar} alt={t.name} className="w-10 h-10 rounded-full object-cover border border-white/10" />
                     <div>
@@ -264,7 +264,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ project, o
             {project.documents && project.documents.length > 0 && (
               <div className="bg-white/[0.03] p-6 rounded-3xl border border-white/10 space-y-3">
                 <h3 className="font-bold text-sm text-white">Project Documents</h3>
-                {project.documents.map((d, idx) => (
+                {project.documents?.map((d, idx) => (
                   <div key={idx} className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2 truncate">
                       <FileText className="w-4 h-4 text-[#F27D26] shrink-0" />
@@ -291,7 +291,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ project, o
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {project.needs.map((need) => {
+            {project.needs?.map((need) => {
               const pPercent = Math.round((need.quantityPledged / need.quantityNeeded) * 100);
               return (
                 <div key={need.id} className="bg-white/[0.03] p-6 rounded-3xl border border-white/10 space-y-4">
@@ -376,7 +376,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ project, o
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5 font-medium">
-                  {project.expenses.map((e) => (
+                  {project.expenses?.map((e) => (
                     <tr key={e.id} className="hover:bg-white/[0.02]">
                       <td className="p-4 font-bold text-white">{e.category}</td>
                       <td className="p-4 text-white/70">{e.description}</td>
@@ -415,7 +415,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ project, o
           </div>
 
           <div className="space-y-6">
-            {project.updates.map((upd) => (
+            {project.updates?.map((upd) => (
               <div key={upd.id} className="bg-white/[0.03] p-6 rounded-3xl border border-white/10 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -435,7 +435,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ project, o
 
                 {upd.mediaUrls && upd.mediaUrls.length > 0 && (
                   <div className="grid grid-cols-2 gap-3 pt-2">
-                    {upd.mediaUrls.map((m, idx) => (
+                    {upd.mediaUrls?.map((m, idx) => (
                       <img key={idx} src={m} alt="Update media" className="w-full h-48 rounded-2xl object-cover border border-white/10" />
                     ))}
                   </div>
@@ -451,12 +451,12 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ project, o
                     <span>{upd.likesCount} Likes</span>
                   </button>
                   <span className="text-white/20">&bull;</span>
-                  <span className="text-white/50 font-medium">{upd.comments.length} Comments</span>
+                  <span className="text-white/50 font-medium">{upd.comments?.length || 0} Comments</span>
                 </div>
 
                 {/* Comment List */}
                 <div className="space-y-2 pt-2">
-                  {upd.comments.map((c) => (
+                  {upd.comments?.map((c) => (
                     <div key={c.id} className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 text-xs">
                       <div className="flex justify-between font-bold text-white">
                         <span>{c.userName} ({c.userRole})</span>

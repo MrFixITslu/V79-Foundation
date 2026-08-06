@@ -15,7 +15,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({ projects, onSelectPr
 
       <div className="absolute top-4 left-4 z-10 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-700 text-xs font-bold flex items-center gap-2">
         <Navigation className="w-3.5 h-3.5 text-emerald-400" />
-        <span>Live Impact Map — {projects.length} Field Locations</span>
+        <span>Live Impact Map — {projects?.length || 0} Field Locations</span>
       </div>
 
       <div className="relative z-10 w-full max-w-2xl grid grid-cols-1 sm:grid-cols-3 gap-4">

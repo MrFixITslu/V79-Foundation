@@ -12,7 +12,7 @@ interface ProjectsPageProps {
 }
 
 export const ProjectsPage: React.FC<ProjectsPageProps> = ({ onSelectProject, openDonateModal, setCurrentTab }) => {
-  const { projects } = useAppData();
+  const { projects, projectCategories } = useAppData();
   const { role } = useAuth();
 
   const [search, setSearch] = useState('');
@@ -21,7 +21,7 @@ export const ProjectsPage: React.FC<ProjectsPageProps> = ({ onSelectProject, ope
   const [sortBy, setSortBy] = useState<'funding' | 'newest' | 'target'>('funding');
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
 
-  const categories = ['All', 'Water & Sanitation', 'Education', 'Healthcare', 'Environment', 'Community Care'];
+  const categories = ['All', ...(projectCategories && projectCategories.length > 0 ? projectCategories : ['Water & Sanitation', 'Education', 'Healthcare', 'Environment', 'Community Care'])];
   const statuses = ['All', 'Active', 'Fundraising', 'Planning', 'Completed'];
 
   let filtered = projects.filter((p) => {

@@ -97,7 +97,7 @@ export const ImpactHubMain: React.FC<ImpactHubMainProps> = ({
   });
 
   // Success Stories (Beneficiaries + Gallery Before/After)
-  const stories = beneficiaries.length > 0 ? beneficiaries : [];
+  const stories = beneficiaries?.length || 0 > 0 ? beneficiaries : [];
 
   return (
     <div className="space-y-12 w-full">
@@ -289,7 +289,7 @@ export const ImpactHubMain: React.FC<ImpactHubMainProps> = ({
               </div>
 
               {/* Recent Update snippet */}
-              {featuredProject.updates && featuredProject.updates.length > 0 && (
+              {featuredProject.updates && featuredProject.updates?.length || 0 > 0 && (
                 <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 text-xs text-white/80 space-y-1">
                   <div className="flex items-center gap-2 font-bold text-[#F27D26]">
                     <Clock className="w-3.5 h-3.5" />

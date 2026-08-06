@@ -48,11 +48,20 @@ export const AdminDashboard: React.FC = () => {
     addNeed,
     donations,
     makeDonation,
+    projectCategories,
+    addProjectCategory,
+    updateProjectCategory,
+    deleteProjectCategory,
   } = useAppData();
 
   const { role } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'projects' | 'needs' | 'volunteers' | 'cms' | 'audit' | 'feasibility' | 'hero' | 'impact_hub' | 'reputation' | 'donations' | 'ffpro2' | 'security'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'needs' | 'volunteers' | 'cms' | 'audit' | 'feasibility' | 'hero' | 'impact_hub' | 'reputation' | 'donations' | 'ffpro2' | 'security' | 'categories'>('projects');
+
+  // Category management local state
+  const [newCategoryInput, setNewCategoryInput] = useState('');
+  const [editingCategoryOld, setEditingCategoryOld] = useState<string | null>(null);
+  const [editingCategoryNew, setEditingCategoryNew] = useState('');
 
   // FFPRO2 Integration States
   const [ffpro2ApiKey, setFfpro2ApiKey] = useState('');
@@ -269,16 +278,17 @@ export const AdminDashboard: React.FC = () => {
       {/* Tabs */}
       <div className="flex overflow-x-auto border-b border-white/10 gap-2 pb-2">
         {[
-          { id: 'projects', label: `Projects Management (${projects.length})` },
+          { id: 'projects', label: `Projects Management (${projects?.length || 0})` },
+          { id: 'categories', label: `Project Categories (${projectCategories?.length || 0})` },
           { id: 'donations', label: 'Record Cash Donations' },
           { id: 'ffpro2', label: 'Planning Sync (FFPRO2)' },
           { id: 'impact_hub', label: 'Impact Hub & Live Dashboard' },
           { id: 'reputation', label: 'Reputation & Honors Governance' },
-          { id: 'needs', label: `Needs Board Items (${needs.length})` },
-          { id: 'volunteers', label: `Volunteer Approvals (${volunteers.length})` },
+          { id: 'needs', label: `Needs Board Items (${needs?.length || 0})` },
+          { id: 'volunteers', label: `Volunteer Approvals (${volunteers?.length || 0})` },
           { id: 'cms', label: 'CMS Content Editor' },
           { id: 'hero', label: 'Full-Screen Hero Video' },
-          { id: 'audit', label: `Audit Log Ledger (${auditLogs.length})` },
+          { id: 'audit', label: `Audit Log Ledger (${auditLogs?.length || 0})` },
           { id: 'feasibility', label: 'Feasibility & AI Settings' },
           { id: 'security', label: '🛡️ Security Hardening Center' },
         ].map((tab) => (
@@ -297,6 +307,134 @@ export const AdminDashboard: React.FC = () => {
           </button>
         ))}
       </div>
+
+      {/* TAB: CATEGORIES */}
+      {activeTab === 'categories' && (
+        <div className="space-y-6">
+          <div className="bg-white/[0.03] p-6 rounded-3xl border border-white/10 space-y-4">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Layers className="w-5 h-5 text-[#F27D26]" />
+              <span>Project Categories Management</span>
+            </h3>
+            <p className="text-xs text-white/60">
+              Add, rename, or remove project categories. Renaming a category automatically updates all associated projects.
+            </p>
+
+            {/* Add Category Form */}
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!newCategoryInput.trim()) return;
+                const success = await addProjectCategory(newCategoryInput.trim());
+                if (success) setNewCategoryInput('');
+              }}
+              className="flex gap-2 max-w-md pt-2"
+            >
+              <input
+                type="text"
+                placeholder="New Category Name..."
+                value={newCategoryInput}
+                onChange={(e) => setNewCategoryInput(e.target.value)}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/40 text-xs focus:outline-none focus:border-[#F27D26]"
+              />
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-xl bg-[#F27D26] hover:bg-[#e06c1b] text-black font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Category</span>
+              </button>
+            </form>
+          </div>
+
+          <div className="bg-white/[0.03] rounded-3xl border border-white/10 overflow-hidden shadow-sm">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-white/5 text-white/50 font-bold uppercase tracking-wider">
+                <tr>
+                  <th className="p-4">Category Name</th>
+                  <th className="p-4">Assigned Projects Count</th>
+                  <th className="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/10 font-medium">
+                {(projectCategories || []).map((cat) => {
+                  const count = projects.filter((p) => p.category === cat).length;
+                  const isEditing = editingCategoryOld === cat;
+                  return (
+                    <tr key={cat} className="hover:bg-white/[0.02]">
+                      <td className="p-4 font-bold text-white">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editingCategoryNew}
+                            onChange={(e) => setEditingCategoryNew(e.target.value)}
+                            className="px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:border-[#F27D26]"
+                          />
+                        ) : (
+                          cat
+                        )}
+                      </td>
+                      <td className="p-4 text-white/60">{count} projects</td>
+                      <td className="p-4 text-right space-x-2">
+                        {isEditing ? (
+                          <>
+                            <button
+                              onClick={async () => {
+                                if (!editingCategoryNew.trim()) return;
+                                const success = await updateProjectCategory(cat, editingCategoryNew.trim());
+                                if (success) {
+                                  setEditingCategoryOld(null);
+                                  setEditingCategoryNew('');
+                                }
+                              }}
+                              className="px-3 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 font-bold cursor-pointer"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingCategoryOld(null);
+                                setEditingCategoryNew('');
+                              }}
+                              className="px-3 py-1 rounded bg-white/10 text-white/70 hover:bg-white/20 cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => {
+                                setEditingCategoryOld(cat);
+                                setEditingCategoryNew(cat);
+                              }}
+                              className="p-1.5 rounded bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 cursor-pointer"
+                              title="Rename Category"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (confirm(`Are you sure you want to delete category "${cat}"?`)) {
+                                  await deleteProjectCategory(cat);
+                                }
+                              }}
+                              className="p-1.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 cursor-pointer"
+                              title="Delete Category"
+                            >
+                              <Trash className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* TAB: PROJECTS */}
       {activeTab === 'projects' && (
@@ -849,7 +987,7 @@ export const AdminDashboard: React.FC = () => {
                     {projects.map((p) => {
                       const record = ffpro2SyncRecords.find((r) => r.projectId === p.id);
                       const isSyncing = ffpro2SyncLoading[p.id];
-                      const tasksCount = p.needs ? p.needs.length : 4;
+                      const tasksCount = p.needs ? p.needs?.length || 0 : 4;
                       const milestonesCount = p.milestones ? p.milestones.length : 3;
 
                       return (
@@ -1006,10 +1144,11 @@ export const AdminDashboard: React.FC = () => {
                   onChange={(e) => setNewProject({ ...newProject, category: e.target.value })}
                   className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-[#F27D26]"
                 >
-                  <option value="Water & Sanitation" className="bg-[#050505] text-white">Water & Sanitation</option>
-                  <option value="Education" className="bg-[#050505] text-white">Education</option>
-                  <option value="Healthcare" className="bg-[#050505] text-white">Healthcare</option>
-                  <option value="Environment" className="bg-[#050505] text-white">Environment</option>
+                  {(projectCategories || ['Water & Sanitation', 'Education', 'Healthcare', 'Environment', 'Community Care']).map((c) => (
+                    <option key={c} value={c} className="bg-[#050505] text-white">
+                      {c}
+                    </option>
+                  ))}
                 </select>
                 <input
                   type="number"

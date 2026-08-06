@@ -42,6 +42,10 @@ interface AppDataContextType {
   leaderboard: LeaderboardEntry[];
   annualAwards: AnnualCommunityAward[];
   reputationConfig: { levels: CommunityLevel[]; badges: Badge[]; pointRules: PointRule[] } | null;
+  projectCategories: string[];
+  addProjectCategory: (name: string) => Promise<boolean>;
+  updateProjectCategory: (oldName: string, newName: string) => Promise<boolean>;
+  deleteProjectCategory: (name: string) => Promise<boolean>;
   loading: boolean;
   refreshAll: () => Promise<void>;
 
@@ -114,6 +118,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [annualAwards, setAnnualAwards] = useState<AnnualCommunityAward[]>([]);
   const [reputationConfig, setReputationConfig] = useState<{ levels: CommunityLevel[]; badges: Badge[]; pointRules: PointRule[] } | null>(null);
+  const [projectCategories, setProjectCategories] = useState<string[]>([]);
   const [corporateAccounts, setCorporateAccounts] = useState<CorporateAccount[]>([]);
   const [sponsorshipPackages, setSponsorshipPackages] = useState<SponsorshipPackage[]>([]);
   const [activeCorporateAccountId, setActiveCorporateAccountIdState] = useState<string>('corp-1');
@@ -195,10 +200,78 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, []);
 
+  const addProjectCategory = useCallback(async (name: string) => {
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setProjectCategories(data.categories);
+        showToast('Project category added successfully!', 'success');
+        return true;
+      } else {
+        showToast(data.error || 'Failed to add category', 'error');
+        return false;
+      }
+    } catch (e) {
+      console.error(e);
+      showToast('Failed to add category', 'error');
+      return false;
+    }
+  }, [showToast]);
+
+  const updateProjectCategory = useCallback(async (oldName: string, newName: string) => {
+    try {
+      const res = await fetch(`/api/categories/${encodeURIComponent(oldName)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newName }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setProjectCategories(data.categories);
+        await refreshAll();
+        showToast('Project category updated successfully!', 'success');
+        return true;
+      } else {
+        showToast(data.error || 'Failed to update category', 'error');
+        return false;
+      }
+    } catch (e) {
+      console.error(e);
+      showToast('Failed to update category', 'error');
+      return false;
+    }
+  }, [showToast]);
+
+  const deleteProjectCategory = useCallback(async (name: string) => {
+    try {
+      const res = await fetch(`/api/categories/${encodeURIComponent(name)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setProjectCategories(data.categories);
+        showToast('Project category deleted successfully!', 'success');
+        return true;
+      } else {
+        showToast(data.error || 'Failed to delete category', 'error');
+        return false;
+      }
+    } catch (e) {
+      console.error(e);
+      showToast('Failed to delete category', 'error');
+      return false;
+    }
+  }, [showToast]);
+
   const refreshAll = useCallback(async () => {
     try {
       setLoading(true);
-      const [pRes, nRes, dRes, vRes, sRes, gRes, bRes, cRes, hRes, tRes, notifRes, hubRes] = await Promise.all([
+      const [pRes, nRes, dRes, vRes, sRes, gRes, bRes, cRes, hRes, tRes, notifRes, hubRes, catRes] = await Promise.all([
         fetch('/api/projects'),
         fetch('/api/needs'),
         fetch('/api/donations'),
@@ -211,6 +284,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         fetch('/api/transparency'),
         fetch('/api/notifications'),
         fetch('/api/impact-hub'),
+        fetch('/api/categories'),
       ]);
 
       if (pRes.ok) setProjects(await pRes.json());
@@ -225,6 +299,7 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (tRes.ok) setTransparency(await tRes.json());
       if (notifRes.ok) setNotifications(await notifRes.json());
       if (hubRes.ok) setImpactHubData(await hubRes.json());
+      if (catRes.ok) setProjectCategories(await catRes.json());
       await refreshReputationData();
       await refreshCorporateData();
     } catch (err) {
@@ -890,6 +965,10 @@ export const AppDataProvider: React.FC<{ children: React.ReactNode }> = ({ child
         deleteAnnualAward,
         updateReputationConfig,
         refreshReputationData,
+        projectCategories,
+        addProjectCategory,
+        updateProjectCategory,
+        deleteProjectCategory,
       }}
     >
       {children}

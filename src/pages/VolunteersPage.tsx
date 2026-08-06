@@ -80,7 +80,7 @@ export const VolunteersPage: React.FC = () => {
         {/* Sub Navigation */}
         <div className="flex overflow-x-auto gap-2 pt-2">
           {[
-            { id: 'roster', label: `Volunteer Roster (${volunteers.length})` },
+            { id: 'roster', label: `Volunteer Roster (${volunteers?.length || 0})` },
             { id: 'apply', label: 'Apply to Volunteer' },
             { id: 'checkin', label: 'QR Field Check-In' },
             { id: 'certificates', label: 'Certificates & Credentials' },
@@ -125,7 +125,7 @@ export const VolunteersPage: React.FC = () => {
                   </div>
 
                   <div className="flex flex-wrap gap-1.5 pt-1">
-                    {vol.skills.map((s, idx) => (
+                    {vol.skills?.map((s, idx) => (
                       <span key={idx} className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-white/80">
                         {s}
                       </span>

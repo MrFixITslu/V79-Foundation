@@ -86,7 +86,7 @@ export const TransparencyPage: React.FC = () => {
   let pendingExpensesCount = 0;
 
   projects.forEach((p) => {
-    p.expenses.forEach((e) => {
+    (p.expenses || []).forEach((e) => {
       allExpenses.push({ ...e, projectName: p.title });
       if (e.status === 'Approved') {
         totalSpent += e.actualSpent;
@@ -98,7 +98,7 @@ export const TransparencyPage: React.FC = () => {
   });
 
   const remainingReserve = Math.max(0, totalDonated - totalSpent);
-  const averageDonation = donations.length > 0 ? Math.round(totalDonated / donations.length) : 120;
+  const averageDonation = donations?.length || 0 > 0 ? Math.round(totalDonated / donations?.length || 0) : 120;
 
   // Calculate dynamic categorical distribution for visually pleasing breakdown
   const categories = ['Operations & Logistics', 'Equipment & Materials', 'Clean Utilities Infrastructure', 'Educational Tech Tools', 'Human Resource/Labor'];
@@ -263,7 +263,7 @@ export const TransparencyPage: React.FC = () => {
           }`}
         >
           <FileText className="w-4 h-4" />
-          <span>Expense Ledger ({filteredLedger.length})</span>
+          <span>Expense Ledger ({filteredLedger?.length || 0})</span>
         </button>
         <button
           onClick={() => setActiveTab('approvals')}
@@ -539,7 +539,7 @@ export const TransparencyPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5 font-semibold text-slate-300">
-                  {filteredLedger.length === 0 ? (
+                  {filteredLedger?.length || 0 === 0 ? (
                     <tr>
                       <td colSpan={8} className="p-8 text-center text-slate-500">
                         No financial releases match your active filter settings.

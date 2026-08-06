@@ -986,7 +986,7 @@ export const CorporatePortal: React.FC = () => {
                         No giving logs recorded yet. Support an active initiative above.
                       </div>
                     ) : (
-                      activeCorporateAccount.sponsoredProjects.map((backed, idx) => (
+                      activeCorporateAccount.sponsoredProjects?.map((backed, idx) => (
                         <div key={idx} className="p-4 rounded-xl bg-slate-950 border border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs hover:border-[#F27D26]/40 transition-all">
                           <div className="space-y-1">
                             <h4 className="font-bold text-white">{backed.projectName}</h4>
@@ -1020,7 +1020,7 @@ export const CorporatePortal: React.FC = () => {
                   </div>
 
                   <div className="space-y-3">
-                    {activeCorporateAccount.documents.map((doc) => (
+                    {activeCorporateAccount.documents?.map((doc) => (
                       <div key={doc.id} className="p-3 rounded-xl bg-slate-950 border border-white/5 flex items-center justify-between text-xs hover:border-slate-800 transition-all">
                         <div className="flex items-center gap-2.5">
                           <div className="p-2 rounded-lg bg-[#F27D26]/10 text-[#F27D26]">
@@ -1047,7 +1047,7 @@ export const CorporatePortal: React.FC = () => {
                   <div className="space-y-2 pt-2">
                     <div className="text-xs font-bold text-white">Verified Account CSR Perks Status:</div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
-                      {activeCorporateAccount.benefits.map((benefit, idx) => (
+                      {activeCorporateAccount.benefits?.map((benefit, idx) => (
                         <div key={idx} className="p-2 rounded-xl bg-white/5 border border-white/5 flex items-start gap-1.5">
                           <CheckCircle2 className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${
                             benefit.status === 'Active' ? 'text-emerald-400' : 'text-amber-400'

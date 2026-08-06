@@ -191,7 +191,19 @@ interface DatabaseStore {
   sponsorshipPackages?: SponsorshipPackage[];
   corporateReports?: CorporateReport[];
   ffpro2SyncRecords?: FFPro2SyncRecord[];
+  projectCategories?: string[];
 }
+
+const DEFAULT_PROJECT_CATEGORIES = [
+  'Water & Sanitation',
+  'Education',
+  'Healthcare',
+  'Environment',
+  'Community Care',
+  'Agriculture',
+  'Youth Development',
+  'Infrastructure',
+];
 
 function loadStore(): DatabaseStore {
   let store: DatabaseStore;
@@ -277,8 +289,8 @@ function loadStore(): DatabaseStore {
   if (!store.cms) store.cms = initialCMSContent;
   if (!store.auditLogs) store.auditLogs = [];
   if (!store.notifications) store.notifications = [];
-  if (!store.feasibilitySettings) {
-    store.feasibilitySettings = DEFAULT_FEASIBILITY_SETTINGS;
+  if (!store.projectCategories) {
+    store.projectCategories = DEFAULT_PROJECT_CATEGORIES;
   }
 
   if (!store.heroConfig) {
@@ -779,6 +791,68 @@ app.post('/api/auth/forgot-password', (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
   return res.json({ message: `Password reset instructions sent to ${email}` });
+});
+
+// CATEGORIES API
+app.get('/api/categories', (req, res) => {
+  if (!store.projectCategories) {
+    store.projectCategories = DEFAULT_PROJECT_CATEGORIES;
+  }
+  res.json(store.projectCategories);
+});
+
+app.post('/api/categories', (req, res) => {
+  const { name } = req.body;
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    return res.status(400).json({ error: 'Category name is required' });
+  }
+  if (!store.projectCategories) store.projectCategories = DEFAULT_PROJECT_CATEGORIES;
+  const trimmed = name.trim();
+  if (store.projectCategories.includes(trimmed)) {
+    return res.status(400).json({ error: 'Category already exists' });
+  }
+  store.projectCategories.push(trimmed);
+  saveStore(store);
+  logAudit('system', 'ADD_CATEGORY', trimmed, `Added new project category: ${trimmed}`);
+  res.json({ success: true, categories: store.projectCategories });
+});
+
+app.put('/api/categories/:oldName', (req, res) => {
+  const oldName = decodeURIComponent(req.params.oldName);
+  const { newName } = req.body;
+  if (!newName || typeof newName !== 'string' || !newName.trim()) {
+    return res.status(400).json({ error: 'New category name is required' });
+  }
+  if (!store.projectCategories) store.projectCategories = DEFAULT_PROJECT_CATEGORIES;
+  const trimmedNew = newName.trim();
+  const idx = store.projectCategories.indexOf(oldName);
+  if (idx === -1) {
+    return res.status(404).json({ error: 'Category not found' });
+  }
+  if (store.projectCategories.includes(trimmedNew)) {
+    return res.status(400).json({ error: 'Category name already exists' });
+  }
+  store.projectCategories[idx] = trimmedNew;
+  store.projects.forEach((p) => {
+    if (p.category === oldName) {
+      p.category = trimmedNew;
+    }
+  });
+  saveStore(store);
+  logAudit('system', 'UPDATE_CATEGORY', oldName, `Updated project category from ${oldName} to ${trimmedNew}`);
+  res.json({ success: true, categories: store.projectCategories });
+});
+
+app.delete('/api/categories/:name', (req, res) => {
+  const name = decodeURIComponent(req.params.name);
+  if (!store.projectCategories) store.projectCategories = DEFAULT_PROJECT_CATEGORIES;
+  if (store.projectCategories.length <= 1) {
+    return res.status(400).json({ error: 'Cannot delete last remaining category' });
+  }
+  store.projectCategories = store.projectCategories.filter((c) => c !== name);
+  saveStore(store);
+  logAudit('system', 'DELETE_CATEGORY', name, `Deleted project category: ${name}`);
+  res.json({ success: true, categories: store.projectCategories });
 });
 
 // PROJECTS API
@@ -1694,75 +1768,22 @@ app.get('/api/hero', (req, res) => {
   if (!store.heroConfig) {
     store.heroConfig = initialHeroConfig;
   }
-  res.json(store.heroConfig);
+  const totalFunds = store.donations.reduce((sum, d) => sum + d.amount, 0);
+  const completedCount = store.projects.filter((p) => p.status === 'Completed').length;
+  const volCount = store.volunteers.length;
+  const livesCount = store.projects.reduce((sum, p) => sum + (p.beneficiariesCount || 0), 0);
+
+  const heroResponse = JSON.parse(JSON.stringify(store.heroConfig));
+  if (heroResponse.slides && heroResponse.slides[0]) {
+    heroResponse.slides[0].stats = [
+      { label: 'Funds Raised', value: totalFunds, prefix: 'EC$' },
+      { label: 'Projects Completed', value: completedCount },
+      { label: 'Volunteers Enrolled', value: volCount },
+      { label: 'Lives Impacted', value: livesCount },
+    ];
+  }
+  res.json(heroResponse);
 });
-
-// IMPACT HUB & LIVE DASHBOARD API
-function getCalculatedMetrics(store: DatabaseStore) {
-  const config = store.impactHubConfig || initialImpactHubConfig;
-  const projects = store.projects || [];
-  const donations = store.donations || [];
-  const volunteers = store.volunteers || [];
-  const sponsors = store.sponsors || [];
-
-  const activeProjectsCount = projects.filter((p) => p.status === 'Active' || (p.status as string) === 'Ongoing' || (p.status as string) === 'In Progress').length;
-  const completedProjectsCount = projects.filter((p) => p.status === 'Completed').length;
-  const planningProjectsCount = projects.filter((p) => p.status === 'Planning' || (p.status as string) === 'Proposed').length;
-  const communityProposalsCount = projects.filter((p) => (p as any).type === 'community' || (p.status as string) === 'Proposed' || p.category === 'Community Care').length;
-  const totalVotesCast = projects.reduce((sum, p) => sum + (p.communityVotes?.upvotes || 0) + (p.communityVotes?.downvotes || 0), 0);
-
-  const totalVolunteers = volunteers.length;
-  const totalVolunteerHours = volunteers.reduce((sum, v) => sum + (v.loggedHours || 0), 0);
-  const totalSponsors = sponsors.length;
-  const totalDonorsCount = new Set(donations.map((d) => d.donorName)).size;
-  const totalCashDonated = donations.reduce((sum, d) => sum + d.amount, 0);
-  const totalFundsRaised = projects.reduce((sum, p) => sum + p.raisedAmount, 0);
-
-  return config.metricsConfig.map((metric) => {
-    let calcVal = metric.value;
-    switch (metric.id) {
-      case 'active_projects':
-        calcVal = activeProjectsCount || metric.value;
-        break;
-      case 'completed_projects':
-        calcVal = completedProjectsCount || metric.value;
-        break;
-      case 'planning_projects':
-        calcVal = planningProjectsCount || metric.value;
-        break;
-      case 'proposals':
-        calcVal = communityProposalsCount || metric.value;
-        break;
-      case 'votes_cast':
-        calcVal = totalVotesCast > 0 ? totalVotesCast : metric.value;
-        break;
-      case 'volunteers_registered':
-        calcVal = totalVolunteers > 0 ? totalVolunteers : metric.value;
-        break;
-      case 'volunteer_hours':
-        calcVal = totalVolunteerHours > 0 ? totalVolunteerHours : metric.value;
-        break;
-      case 'sponsors':
-        calcVal = totalSponsors > 0 ? totalSponsors : metric.value;
-        break;
-      case 'donors':
-        calcVal = totalDonorsCount > 0 ? totalDonorsCount : metric.value;
-        break;
-      case 'cash_donations':
-        calcVal = totalCashDonated > 0 ? totalCashDonated : metric.value;
-        break;
-      case 'lifetime_funds':
-        calcVal = totalFundsRaised > 0 ? totalFundsRaised : metric.value;
-        break;
-      default:
-        calcVal = metric.customValue !== undefined ? metric.customValue : metric.value;
-    }
-    return {
-      ...metric,
-      computedValue: calcVal,
-    };
-  });
-}
 
 app.get('/api/impact-hub', (req, res) => {
   if (!store.impactHubConfig) store.impactHubConfig = initialImpactHubConfig;
@@ -2709,6 +2730,427 @@ app.post('/api/ffpro2/sync', (req, res) => {
   });
 });
 
+// IMPACT HUB & LIVE DASHBOARD API
+function getCalculatedMetrics(store: DatabaseStore) {
+  const config = store.impactHubConfig || initialImpactHubConfig;
+  const projects = store.projects || [];
+  const donations = store.donations || [];
+  const volunteers = store.volunteers || [];
+  const sponsors = store.sponsors || [];
+
+  const activeProjectsCount = projects.filter((p) => p.status === 'Active' || (p.status as string) === 'Ongoing' || (p.status as string) === 'In Progress').length;
+  const completedProjectsCount = projects.filter((p) => p.status === 'Completed').length;
+  const planningProjectsCount = projects.filter((p) => p.status === 'Planning' || (p.status as string) === 'Proposed').length;
+  const communityProposalsCount = projects.filter((p) => (p as any).type === 'community' || (p.status as string) === 'Proposed' || p.category === 'Community Care').length;
+  const totalVotesCast = projects.reduce((sum, p) => sum + (p.communityVotes?.upvotes || 0) + (p.communityVotes?.downvotes || 0), 0);
+
+  const totalVolunteers = volunteers.length;
+  const totalVolunteerHours = volunteers.reduce((sum, v) => sum + (v.loggedHours || 0), 0);
+  const totalSponsors = sponsors.length;
+  const totalDonorsCount = new Set(donations.map((d) => d.donorName)).size;
+  const totalCashDonated = donations.reduce((sum, d) => sum + d.amount, 0);
+  const totalFundsRaised = projects.reduce((sum, p) => sum + p.raisedAmount, 0);
+  const totalLivesImpacted = projects.reduce((sum, p) => sum + (p.beneficiariesCount || 0), 0);
+  const totalCommunitiesServed = new Set(projects.map((p) => p.location?.city).filter(Boolean)).size;
+
+  return config.metricsConfig.map((metric) => {
+    let calcVal = 0;
+    switch (metric.id) {
+      case 'active_projects':
+        calcVal = activeProjectsCount;
+        break;
+      case 'completed_projects':
+        calcVal = completedProjectsCount;
+        break;
+      case 'planning_projects':
+        calcVal = planningProjectsCount;
+        break;
+      case 'proposals':
+        calcVal = communityProposalsCount;
+        break;
+      case 'votes_cast':
+        calcVal = totalVotesCast;
+        break;
+      case 'volunteers_registered':
+        calcVal = totalVolunteers;
+        break;
+      case 'volunteer_hours':
+        calcVal = totalVolunteerHours;
+        break;
+      case 'sponsors':
+        calcVal = totalSponsors;
+        break;
+      case 'donors':
+        calcVal = totalDonorsCount;
+        break;
+      case 'cash_donations':
+        calcVal = totalCashDonated;
+        break;
+      case 'lifetime_funds':
+        calcVal = totalFundsRaised;
+        break;
+      case 'lives_impacted':
+        calcVal = totalLivesImpacted;
+        break;
+      case 'communities_served':
+        calcVal = totalCommunitiesServed;
+        break;
+      default:
+        calcVal = metric.customValue !== undefined ? metric.customValue : (metric.value || 0);
+    }
+    return {
+      ...metric,
+      computedValue: calcVal,
+    };
+  });
+}
+
+app.get('/api/impact-hub', (req, res) => {
+  if (!store.impactHubConfig) store.impactHubConfig = initialImpactHubConfig;
+  if (!store.timelineEvents) store.timelineEvents = initialTimelineEvents;
+  if (!store.liveActivity) store.liveActivity = initialLiveActivity;
+  if (!store.scorecard) store.scorecard = initialScorecard;
+  if (!store.healthData) store.healthData = initialHealthData;
+  if (!store.analyticsData) store.analyticsData = initialAnalyticsData;
+
+  const calculatedMetrics = getCalculatedMetrics(store);
+
+  res.json({
+    config: store.impactHubConfig,
+    timelineEvents: store.timelineEvents,
+    liveActivity: store.liveActivity,
+    scorecard: store.scorecard,
+    healthData: store.healthData,
+    analyticsData: store.analyticsData,
+    calculatedMetrics,
+  });
+});
+
+app.put('/api/impact-hub/config', (req, res) => {
+  const updatedConfig = req.body;
+  if (!updatedConfig || !Array.isArray(updatedConfig.metricsConfig)) {
+    return res.status(400).json({ error: 'Invalid config payload' });
+  }
+  store.impactHubConfig = updatedConfig;
+  saveStore(store);
+  logAudit('admin@vision79.org', 'UPDATE_IMPACT_HUB_CONFIG', 'impact-hub', 'Updated Impact Hub configuration & widget preferences', req.ip);
+  res.json({ success: true, config: store.impactHubConfig });
+});
+
+app.post('/api/impact-hub/timeline', (req, res) => {
+  if (!store.timelineEvents) store.timelineEvents = initialTimelineEvents;
+  const event = req.body;
+  if (!event.title) return res.status(400).json({ error: 'Title is required' });
+
+  const newEvent: ImpactTimelineEvent = {
+    id: event.id || `tl-${Date.now()}`,
+    title: event.title,
+    description: event.description || '',
+    date: event.date || new Date().toISOString().slice(0, 10),
+    type: event.type || 'milestone',
+    projectId: event.projectId,
+    imageUrl: event.imageUrl,
+    linkUrl: event.linkUrl,
+  };
+
+  const existingIdx = store.timelineEvents.findIndex((t) => t.id === newEvent.id);
+  if (existingIdx >= 0) {
+    store.timelineEvents[existingIdx] = newEvent;
+  } else {
+    store.timelineEvents.unshift(newEvent);
+  }
+
+  saveStore(store);
+  res.json(store.timelineEvents);
+});
+
+app.delete('/api/impact-hub/timeline/:id', (req, res) => {
+  if (!store.timelineEvents) store.timelineEvents = initialTimelineEvents;
+  store.timelineEvents = store.timelineEvents.filter((t) => t.id !== req.params.id);
+  saveStore(store);
+  res.json(store.timelineEvents);
+});
+
+app.put('/api/impact-hub/scorecard', (req, res) => {
+  store.scorecard = { ...store.scorecard, ...req.body };
+  saveStore(store);
+  logAudit('admin@vision79.org', 'UPDATE_SCORECARD', 'impact-hub', 'Updated Foundation scorecard KPIs', req.ip);
+  res.json(store.scorecard);
+});
+
+app.put('/api/impact-hub/health', (req, res) => {
+  store.healthData = { ...store.healthData, ...req.body };
+  saveStore(store);
+  logAudit('admin@vision79.org', 'UPDATE_FOUNDATION_HEALTH', 'impact-hub', 'Updated Foundation health scores', req.ip);
+  res.json(store.healthData);
+});
+
+app.get('/api/impact-hub/analytics', (req, res) => {
+  if (!store.analyticsData) store.analyticsData = initialAnalyticsData;
+  res.json(store.analyticsData);
+});
+
+
+app.put('/api/hero', (req, res) => {
+  const updatedConfig = req.body;
+  if (!updatedConfig || !Array.isArray(updatedConfig.slides)) {
+    return res.status(400).json({ error: 'Invalid hero configuration structure' });
+  }
+  store.heroConfig = updatedConfig;
+  saveStore(store);
+  logAudit('admin@vision79.org', 'UPDATE_HERO_CONFIG', 'hero', 'Updated full-screen hero configuration and slides', req.ip);
+  res.json(store.heroConfig);
+});
+
+app.post('/api/hero/slide', (req, res) => {
+  if (!store.heroConfig) store.heroConfig = initialHeroConfig;
+  const slide = req.body;
+  if (!slide.headline) {
+    return res.status(400).json({ error: 'Headline is required' });
+  }
+  const existingIdx = store.heroConfig.slides.findIndex((s) => s.id === slide.id);
+  if (existingIdx >= 0) {
+    store.heroConfig.slides[existingIdx] = { ...store.heroConfig.slides[existingIdx], ...slide };
+  } else {
+    const newSlide: HeroSlide = {
+      id: `hero-slide-${Date.now()}`,
+      title: slide.title || 'New Campaign Slide',
+      headline: slide.headline,
+      subheading: slide.subheading || '',
+      missionStatement: slide.missionStatement || '',
+      mediaType: slide.mediaType || 'image',
+      videoUrl: slide.videoUrl,
+      imageUrl: slide.imageUrl,
+      posterImage: slide.posterImage,
+      fallbackImage: slide.fallbackImage,
+      primaryCtaText: slide.primaryCtaText || 'Support a Project',
+      primaryCtaAction: slide.primaryCtaAction || 'donate',
+      secondaryCtaText: slide.secondaryCtaText || 'Learn More',
+      secondaryCtaAction: slide.secondaryCtaAction || 'projects',
+      overlayOpacity: slide.overlayOpacity ?? 70,
+      overlayGradient: slide.overlayGradient || 'brand',
+      stats: slide.stats || [],
+      enabled: slide.enabled ?? true,
+      campaignType: slide.campaignType || 'standard',
+      eventCountdownDate: slide.eventCountdownDate,
+      seoHeading: slide.seoHeading,
+      seoMetaDescription: slide.seoMetaDescription,
+      socialShareImage: slide.socialShareImage,
+    };
+    store.heroConfig.slides.push(newSlide);
+  }
+  saveStore(store);
+  res.json(store.heroConfig);
+});
+
+app.delete('/api/hero/slide/:id', (req, res) => {
+  if (!store.heroConfig) store.heroConfig = initialHeroConfig;
+  const slideId = req.params.id;
+  store.heroConfig.slides = store.heroConfig.slides.filter((s) => s.id !== slideId);
+  if (store.heroConfig.activeSlideId === slideId && store.heroConfig.slides.length > 0) {
+    store.heroConfig.activeSlideId = store.heroConfig.slides[0].id;
+  }
+  saveStore(store);
+  res.json(store.heroConfig);
+});
+
+// REPORTS EXPORT API (CSV / JSON format)
+
+app.get('/api/reports/export', (req, res) => {
+  const type = String(req.query.type || 'donations');
+
+  let filename = `vision79-${type}-report.csv`;
+  let csvContent = '';
+
+  if (type === 'donations') {
+    csvContent = 'ID,Receipt,Donor Name,Email,Amount,Type,Date,Project\n';
+    store.donations.forEach((d) => {
+      csvContent += `"${d.id}","${d.receiptNumber}","${d.donorName}","${d.donorEmail}",${d.amount},"${d.type}","${d.date}","${d.projectName}"\n`;
+    });
+  } else if (type === 'volunteers') {
+    csvContent = 'ID,Name,Email,Project,Skills,Status,Logged Hours,Applied Date\n';
+    store.volunteers.forEach((v) => {
+      csvContent += `"${v.id}","${v.userName}","${v.userEmail}","${v.projectName}","${v.skills.join('; ')}","${v.status}",${v.loggedHours},"${v.appliedDate}"\n`;
+    });
+  } else if (type === 'financial') {
+    csvContent = 'Project,Category,Approved Budget,Actual Spent,Vendor,Date,Status\n';
+    store.projects.forEach((p) => {
+      p.expenses.forEach((e) => {
+        csvContent += `"${p.title}","${e.category}",${e.approvedBudget},${e.actualSpent},"${e.vendor || ''}","${e.date}","${e.status}"\n`;
+      });
+    });
+  } else {
+    csvContent = 'Project,Category,Target Amount,Raised Amount,Status,Beneficiaries\n';
+    store.projects.forEach((p) => {
+      csvContent += `"${p.title}","${p.category}",${p.targetAmount},${p.raisedAmount},"${p.status}",${p.beneficiariesCount}\n`;
+    });
+  }
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  return res.send(csvContent);
+});
+
+// FEASIBILITY & COMMUNITY VOTING API
+
+// Run AI Feasibility Assessment for a proposal or project
+app.post('/api/ai/feasibility/assess', async (req, res) => {
+  const { project, projectId } = req.body;
+  let targetProj: Partial<Project> = project || {};
+
+  if (projectId) {
+    const existing = store.projects.find((p) => p.id === projectId);
+    if (existing) targetProj = { ...existing, ...project };
+  }
+
+  const settings = store.feasibilitySettings || DEFAULT_FEASIBILITY_SETTINGS;
+  const assessment = evaluateProjectFeasibility(targetProj, settings);
+
+  // If Gemini API is available, optionally refine recommendations with AI
+  const ai = getGeminiClient();
+  if (ai && targetProj.title) {
+    try {
+      const aiPrompt = `Perform a concise feasibility review for community project "${targetProj.title}". Summary: ${targetProj.summary}. Target Budget: $${targetProj.targetAmount}. Beneficiaries: ${targetProj.beneficiariesCount}.
+Provide 2 concrete actionable recommendations to improve project feasibility and 1 potential risk factor to mitigate. Keep response under 100 words.`;
+
+      const aiRes = await ai.models.generateContent({
+        model: 'gemini-3.6-flash',
+        contents: aiPrompt,
+        config: { temperature: 0.5 },
+      });
+
+      if (aiRes.text) {
+        const lines = aiRes.text.split('\n').map((l) => l.replace(/^[-*•\d.]+\s*/, '').trim()).filter((l) => l.length > 10);
+        if (lines.length > 0) {
+          assessment.recommendations = Array.from(new Set([...lines, ...assessment.recommendations])).slice(0, 5);
+        }
+      }
+    } catch (err) {
+      console.warn('Gemini AI feasibility refinement skipped:', err);
+    }
+  }
+
+  if (projectId) {
+    const pIdx = store.projects.findIndex((p) => p.id === projectId);
+    if (pIdx !== -1) {
+      store.projects[pIdx].feasibilityAssessment = assessment;
+      saveStore(store);
+      logAudit('system', 'FEASIBILITY_ASSESSED', 'project', `Re-evaluated feasibility for project ${projectId} (Score: ${assessment.overallScore}%)`, req.ip);
+    }
+  }
+
+  return res.json({ assessment });
+});
+
+// Community upvote / downvote on project proposal
+app.post('/api/projects/:id/vote', (req, res) => {
+  const { id } = req.params;
+  const { vote, userEmail } = req.body; // 'up' or 'down'
+
+  const proj = store.projects.find((p) => p.id === id);
+  if (!proj) return res.status(404).json({ error: 'Project not found' });
+
+  if (!proj.communityVotes) {
+    proj.communityVotes = { upvotes: 0, downvotes: 0, votedUsers: {} };
+  }
+  if (!proj.communityVotes.votedUsers) {
+    proj.communityVotes.votedUsers = {};
+  }
+
+  const voterKey = userEmail ? userEmail.toLowerCase() : 'guest_' + req.ip;
+  const previousVote = proj.communityVotes.votedUsers[voterKey];
+
+  if (previousVote === vote) {
+    return res.json({ communityVotes: proj.communityVotes, message: 'Already voted' });
+  }
+
+  // Adjust counts
+  if (previousVote === 'up') proj.communityVotes.upvotes = Math.max(0, proj.communityVotes.upvotes - 1);
+  if (previousVote === 'down') proj.communityVotes.downvotes = Math.max(0, proj.communityVotes.downvotes - 1);
+
+  if (vote === 'up') proj.communityVotes.upvotes += 1;
+  if (vote === 'down') proj.communityVotes.downvotes += 1;
+
+  proj.communityVotes.votedUsers[voterKey] = vote;
+  saveStore(store);
+
+  logAudit(voterKey, 'COMMUNITY_VOTE', 'project', `Voted ${vote} on project ${proj.title}`, req.ip);
+  return res.json({ communityVotes: proj.communityVotes });
+});
+
+// Feasibility Settings API (Admin)
+app.get('/api/feasibility/settings', (req, res) => {
+  res.json(store.feasibilitySettings || DEFAULT_FEASIBILITY_SETTINGS);
+});
+
+app.put('/api/feasibility/settings', (req, res) => {
+  const newSettings: FeasibilitySettings = { ...DEFAULT_FEASIBILITY_SETTINGS, ...req.body };
+  store.feasibilitySettings = newSettings;
+
+  // Re-evaluate all projects with updated weights/thresholds
+  store.projects = store.projects.map((p) => ({
+    ...p,
+    feasibilityAssessment: evaluateProjectFeasibility(p, newSettings),
+  }));
+
+  saveStore(store);
+  logAudit('admin@vision79.org', 'UPDATE_FEASIBILITY_SETTINGS', 'admin', 'Updated Feasibility Assessment Weights & Thresholds', req.ip);
+  res.json(store.feasibilitySettings);
+});
+
+// Feasibility Analytics API
+app.get('/api/feasibility/analytics', (req, res) => {
+  const projects = store.projects;
+
+  const totalScore = projects.reduce((sum, p) => sum + (p.feasibilityAssessment?.overallScore || 80), 0);
+  const averageProposalScore = projects.length > 0 ? Math.round((totalScore / projects.length) * 10) / 10 : 0;
+
+  const sorted = [...projects].sort((a, b) => (b.feasibilityAssessment?.overallScore || 0) - (a.feasibilityAssessment?.overallScore || 0));
+
+  const highestScoringProjects = sorted.slice(0, 5).map((p) => ({
+    id: p.id,
+    title: p.title,
+    score: p.feasibilityAssessment?.overallScore || 80,
+    status: p.status,
+  }));
+
+  const lowestScoringProjects = [...sorted].reverse().slice(0, 5).map((p) => ({
+    id: p.id,
+    title: p.title,
+    score: p.feasibilityAssessment?.overallScore || 80,
+    status: p.status,
+  }));
+
+  const averageFundingSuccessByScore = [
+    { tier: 'High Feasibility (85-100%)', successRate: 94, avgFundingPercent: 92 },
+    { tier: 'Medium Feasibility (70-84%)', successRate: 81, avgFundingPercent: 78 },
+    { tier: 'Needs Review (< 70%)', successRate: 45, avgFundingPercent: 42 },
+  ];
+
+  const averageCompletionRateByScore = [
+    { tier: 'High Feasibility (85-100%)', completionRate: 98 },
+    { tier: 'Medium Feasibility (70-84%)', completionRate: 86 },
+    { tier: 'Needs Review (< 70%)', completionRate: 52 },
+  ];
+
+  const feasibilityDeliveryCorrelation = [
+    { scoreRange: '90-100% Score', onTimeDeliveryRate: 96, budgetAdherenceRate: 98 },
+    { scoreRange: '75-89% Score', onTimeDeliveryRate: 88, budgetAdherenceRate: 91 },
+    { scoreRange: '60-74% Score', onTimeDeliveryRate: 72, budgetAdherenceRate: 75 },
+    { scoreRange: '< 60% Score', onTimeDeliveryRate: 48, budgetAdherenceRate: 55 },
+  ];
+
+  const analyticsData: FeasibilityAnalyticsData = {
+    averageProposalScore,
+    highestScoringProjects,
+    lowestScoringProjects,
+    averageFundingSuccessByScore,
+    averageCompletionRateByScore,
+    feasibilityDeliveryCorrelation,
+  };
+
+  res.json(analyticsData);
+});
 // ------------------- VITE OR STATIC SERVE -------------------
 
 async function startServer() {

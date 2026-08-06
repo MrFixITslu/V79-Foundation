@@ -333,7 +333,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           {/* Stats Bar */}
           {currentSlide.stats && currentSlide.stats.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 sm:p-6 rounded-3xl bg-black/50 backdrop-blur-xl border border-white/15">
-              {currentSlide.stats.map((stat, idx) => (
+              {currentSlide.stats?.map((stat, idx) => (
                 <div key={idx} className="space-y-1">
                   <div className="text-xl sm:text-3xl font-black text-[#F27D26] tracking-tight">
                     {stat.prefix || ''}
