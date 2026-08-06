@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ThemeProvider } from './context/ThemeContext.tsx';
 import { ToastProvider } from './context/ToastContext.tsx';
 import { AuthProvider } from './context/AuthContext.tsx';
@@ -24,13 +24,49 @@ import { AdminDashboard } from './pages/AdminDashboard.tsx';
 import { ReputationPage } from './pages/ReputationPage.tsx';
 import { Project } from './types.js';
 
+const getTabFromPath = (): string => {
+  const path = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+  if (!path) return 'home';
+  if (path === 'admin') return 'admin';
+  if (path === 'projects') return 'projects';
+  if (path === 'needs') return 'needs';
+  if (path === 'transparency') return 'transparency';
+  if (path === 'reputation' || path === 'leaderboard') return 'reputation';
+  if (path === 'volunteers') return 'volunteers';
+  if (path === 'gallery') return 'gallery';
+  if (path === 'corporate' || path === 'sponsors') return 'corporate';
+  if (path === 'mobile') return 'mobile';
+  if (path === 'about') return 'about';
+  if (path === 'contact') return 'contact';
+  return 'home';
+};
+
 const MainAppContent: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState('home');
+  const [currentTab, setCurrentTabState] = useState(getTabFromPath);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   const [isDonateOpen, setIsDonateOpen] = useState(false);
   const [donateDefaultProject, setDonateDefaultProject] = useState<string | undefined>(undefined);
   const [isAiOpen, setIsAiOpen] = useState(false);
+
+  const setCurrentTab = (tab: string, updateUrl = true) => {
+    setCurrentTabState(tab);
+    if (updateUrl) {
+      const newPath = tab === 'home' ? '/' : `/${tab}`;
+      if (window.location.pathname !== newPath) {
+        window.history.pushState({}, '', newPath);
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentTabState(getTabFromPath());
+      setSelectedProject(null);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const handleSelectProject = (project: Project) => {
     setSelectedProject(project);
